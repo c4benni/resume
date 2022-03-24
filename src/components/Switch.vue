@@ -1,0 +1,112 @@
+<template>
+  <div
+    role="checkbox"
+    :aria-checked="isChecked ? 'true' : 'false'"
+    class="w-[40px] h-[24px] cursor-pointer rounded-full relative fill-before before:bg-current before:opacity-20 isolate before:-z-1 flex items-center can-hover:focus-within:ring-2 bg-primary/20 dark:bg-primary-dark/20"
+    @click="toggle(!isChecked)"
+  >
+    <input
+      ref="input"
+      v-bind="inputAttrs"
+      type="checkbox"
+      class="sr-only left-[50%] top-[50%]"
+      :id="id"
+      :checked="isChecked"
+      @input="onInput"
+    />
+    <!-- track -->
+    <UiTransition>
+      <div
+        v-if="isChecked"
+        class="bg-primary dark:bg-primary-dark absolute rounded-[inherit] w-full h-full"
+      />
+    </UiTransition>
+
+    <!-- thumb -->
+
+    <UiTransition
+      :config="{
+        leave: false,
+        enter: isChecked ? 'slideX(0, 16, `px`)' : 'slideX(15, 0, `px`)',
+      }"
+      :spring="isChecked ? 'wobbly' : 'default'"
+      retain-final-style
+    >
+      <div
+        :key="`${isChecked}`"
+        :class="[
+          'w-[21px] h-[21px] rounded-full bg-white dark:bg-gray-100 z-1 mx-[1.5px] shadow-md',
+          {
+            'translate-x-[16px]': isChecked,
+          },
+        ]"
+      ></div>
+    </UiTransition>
+  </div>
+</template>
+
+<script lang="ts">
+import { computed, defineComponent, ref } from "vue";
+
+export default defineComponent({
+  name: "Switch",
+  emits: ["update:modelValue"],
+  props: {
+    modelValue: {
+      type: Boolean,
+      default: undefined,
+    },
+    id: {
+      type: String,
+      default: undefined,
+    },
+    inputAttrs: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+  setup(p, { emit }) {
+    const props = computed(() => p);
+
+    const state = ref(false);
+
+    const input = ref(null);
+
+    const isChecked = computed(() => {
+      if (typeof props.value.modelValue == "boolean") {
+        return props.value.modelValue;
+      }
+      return state.value;
+    });
+
+    const toggle = (val?: boolean) => {
+      const value = typeof val === "boolean" ? val : !isChecked.value;
+
+      if (typeof props.value.modelValue !== "undefined") {
+        emit("update:modelValue", value);
+      }
+
+      state.value = value;
+
+      if (input.value) {
+        const inputEl = input.value as unknown as HTMLInputElement;
+
+        inputEl.focus?.();
+      }
+    };
+
+    const onInput = (e: Event) => {
+      const target = e.target as unknown as HTMLInputElement;
+
+      toggle(target.checked);
+    };
+
+    return {
+      toggle,
+      onInput,
+      isChecked,
+      input,
+    };
+  },
+});
+</script>
